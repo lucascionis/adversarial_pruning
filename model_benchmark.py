@@ -1,17 +1,17 @@
-import os
 from args import parse_args
 
 import torch
 from torch.nn import Conv2d, Linear
 from torch.utils.data import DataLoader
 import pandas as pd
+import numpy as np
 
 from models.wrn_cifar import wrn_28_4 as hydra_wrn_28_4
 from models.vgg_cifar import vgg16_bn as hydra_vgg16
 from data.cifar import CIFAR10
-from utils.model import prepare_model
 
 from autoattack import AutoAttack as AA
+from attacks.fmn_opt import FMNOpt
 
 args = parse_args()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -67,25 +67,24 @@ def accuracy(model, samples, labels):
 
 
 def main():
-    args.batch_size = args.test_batch_size = 50
+    args.batch_size = args.test_batch_size = 10
+    args.test_autoattack = False
+    args.test_fmn = True
+
     test_images = 1000
-    rb_samples = 50
-    rb_batch_size = 25
+    attack_samples = 100
+    attack_batch_size = 25
 
     # Load data
     print("->Retrieving the dataset...")
     dataset = CIFAR10(args=args)
     train_loader, test_loader, testset = dataset.data_loaders()
 
-    aa_dataloader = DataLoader(testset, batch_size=rb_samples, shuffle=False)
-    aa_images, aa_labels = next(iter(aa_dataloader))
-
     # Creating data lists
     test_data = {}
 
     for model_name in pretrained:
         print("\n")
-        # iterate through checkpoints
         model = model_to_net[model_name](
             conv_layer=Conv2d,
             linear_layer=Linear,
@@ -96,6 +95,7 @@ def main():
         if model_name not in test_data:
             test_data[model_name] = {}
 
+        # iterate through chechkpoints
         for i, chk_path in enumerate(pretrained[model_name]):
             print(f"\n->Loading the {model_name}/{sparsities[i]} model...")
             test_data[model_name][sparsities[i]/100] = {}
@@ -110,15 +110,59 @@ def main():
             test_data[model_name][sparsities[i] / 100]['clean acc'] = acc
 
             # Auto-Attack evaluation
-            print("->Evaluating robustness...")
-            model_adv = AA(model, norm='Linf', eps=8 / 255, version='standard', device=device)
+            if args.test_autoattack:
+                print("->Evaluating robustness with AA...")
+                model_adv = AA(model, norm='Linf', eps=8 / 255, version='standard', device=device)
+                model_adv.attacks_to_run = model_adv.attacks_to_run = ['apgd-ce']
 
-            model_adv.attacks_to_run = model_adv.attacks_to_run = ['apgd-ce']
-            x_adv = model_adv.run_standard_evaluation(aa_images, aa_labels, bs=rb_batch_size)
+                aa_dataloader = DataLoader(testset, batch_size=attack_samples, shuffle=False)
+                aa_images, aa_labels = next(iter(aa_dataloader))
+                x_adv = model_adv.run_standard_evaluation(aa_images, aa_labels, bs=attack_batch_size)
 
-            robust_acc = accuracy(model, x_adv, aa_labels)
-            print(f"->Robust accuracy: {robust_acc*100:.2f}")
-            test_data[model_name][sparsities[i] / 100]['AA robust'] = robust_acc
+                robust_acc = accuracy(model, x_adv, aa_labels)
+                print(f"->AA robust accuracy: {robust_acc*100:.2f}")
+                test_data[model_name][sparsities[i] / 100]['AA robust'] = robust_acc
+            if args.test_fmn:
+                print("->Evaluating robustness with FMN...")
+                steps = 100
+
+                optimizer = 'SGD'
+                scheduler = 'CosineAnnealingLR'
+
+                optimizer_config = {
+                    'lr': 10,
+                    'momentum': 0.9
+                }
+                scheduler_config = {}
+
+                if scheduler == 'MultiStepLR':
+                    milestones = len(scheduler_config['milestones'])
+                    scheduler_config['milestones'] = np.linspace(0, steps, milestones)
+
+                if scheduler == 'CosineAnnealingLR':
+                    scheduler_config['T_max'] = steps
+
+                if scheduler == 'CosineAnnealingWarmRestarts':
+                    scheduler_config['T_0'] = steps // 2
+
+                fmn_opt = FMNOpt(
+                    model=model.eval().to(device),
+                    dataset=dataset,
+                    norm='inf',
+                    steps=steps,
+                    batch_size=attack_batch_size,
+                    batch_number=attack_samples//attack_batch_size,
+                    optimizer=optimizer,
+                    scheduler=scheduler,
+                    optimizer_config=optimizer_config,
+                    scheduler_config=scheduler_config,
+                    device=device
+                )
+
+                fmn_opt.run()
+                robust_acc = accuracy(model, fmn_opt.attack_data['best_adv'], aa_labels)
+                print(f"->FMN robust accuracy: {robust_acc * 100:.2f}")
+                test_data[model_name][sparsities[i] / 100]['AA robust'] = robust_acc
 
     flat_data = {}
     for outer_key, inner_dict in test_data.items():
