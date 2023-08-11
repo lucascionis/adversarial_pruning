@@ -1,1 +1,1 @@
-# Adversarial Pruning
+# Benchmarking adversarial pruning methods
