@@ -335,16 +335,5 @@ class FMNOpt:
             self.attack_data[batch_idx]['best_adv'] = self.init_trackers['best_adv'].clone()
             self.attack_data[batch_idx]['best_distance'] = torch.median(_best_distance).item()
 
-        data_path = 'fmn_attack_data'
-
-        if not os.path.exists(data_path):
-            os.mkdir(data_path)
-        # Save the data
-        for i in range(self.batch_number):
-            if not os.path.exists(f'{data_path}/{i}'):
-                os.mkdir(f'{data_path}/{i}')
-            for data in self.attack_data[i]:
-                torch.save(self.attack_data[i][data], f'{data_path}/{i}/{data}.pt')
-
         if log:
             print("Attack completed!\n")
