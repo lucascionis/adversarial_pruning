@@ -1,3 +1,5 @@
+import os
+import datetime
 from args import parse_args
 
 import torch
@@ -98,7 +100,7 @@ def main():
         # iterate through chechkpoints
         for i, chk_path in enumerate(pretrained[model_name]):
             print(f"\n->Loading the {model_name}/{sparsities[i]} model...")
-            test_data[model_name][sparsities[i]/100] = {}
+            test_data[model_name][sparsities[i]] = {}
 
             checkpoint = torch.load(chk_path, map_location=device)
             model.load_state_dict(checkpoint['state_dict'], strict=True)
@@ -107,7 +109,7 @@ def main():
             # Clean-acc evaluation
             print(f"->Evaluating clean accuracy on {test_images} test images...")
             acc = compute_accuracy(model, test_loader, test_images)
-            test_data[model_name][sparsities[i] / 100]['clean acc'] = acc
+            test_data[model_name][sparsities[i]]['clean acc'] = acc
 
             # Auto-Attack evaluation
             if args.test_autoattack:
@@ -121,7 +123,7 @@ def main():
 
                 robust_acc = accuracy(model, x_adv, aa_labels)
                 print(f"->AA robust accuracy: {robust_acc*100:.2f}")
-                test_data[model_name][sparsities[i] / 100]['AA robust'] = robust_acc
+                test_data[model_name][sparsities[i]]['AA robust'] = robust_acc
             if args.test_fmn:
                 print("->Evaluating robustness with FMN...")
                 steps = 100
@@ -162,7 +164,22 @@ def main():
                 fmn_opt.run()
                 robust_acc = accuracy(model, fmn_opt.attack_data['best_adv'], aa_labels)
                 print(f"->FMN robust accuracy: {robust_acc * 100:.2f}")
-                test_data[model_name][sparsities[i] / 100]['AA robust'] = robust_acc
+                test_data[model_name][sparsities[i]]['AA robust'] = robust_acc
+
+                # Get the current date and time
+                current_datetime = datetime.datetime.now()
+                formatted_datetime = current_datetime.strftime("%Y%m%d_%H%M")
+                data_path = os.path.join('fmn_attack_data', f'{model_name}_{sparsities[i]}_{formatted_datetime}')
+
+                print('-> Saving FMN data...')
+                if not os.path.exists(data_path):
+                    os.makedirs(data_path)
+                # Save the data
+                for j in range(fmn_opt.batch_number):
+                    if not os.path.exists(f'{data_path}/{j}'):
+                        os.mkdir(f'{data_path}/{j}')
+                    for data in fmn_opt.attack_data[j]:
+                        torch.save(fmn_opt.attack_data[j][data], f'{data_path}/{j}/{data}.pt')
 
     flat_data = {}
     for outer_key, inner_dict in test_data.items():
