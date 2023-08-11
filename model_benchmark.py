@@ -162,7 +162,7 @@ def main():
                 )
 
                 fmn_opt.run(log=True)
-                robust_acc = accuracy(model, fmn_opt.attack_data[-1]['best_adv'], aa_labels)
+                robust_acc = accuracy(model, fmn_opt.attack_data[-1]['best_adv'], fmn_opt.attack_data[-1]['labels'])
                 print(f"->FMN robust accuracy: {robust_acc * 100:.2f}")
                 test_data[model_name][sparsities[i]]['AA robust'] = robust_acc
 
