@@ -1,0 +1,11 @@
+torch>=1.8.0
+torchvision>=0.9.0
+tqdm>=4.48.0
+visdom>=0.1.8
+matplotlib
+numpy
+pandas
+flaml
+foolbox
+git+https://github.com/RobustBench/robustbench.git
+git+https://github.com/fra31/auto-attack
