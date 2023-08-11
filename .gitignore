@@ -1,0 +1,9 @@
+*.zip
+/venv/
+/harp_pretrained/
+/hydra_pretrained/
+/hydra_pruned/
+/venv/
+/hydra_pruned.zip
+/hydra_pretrained.zip
+/datasets/
