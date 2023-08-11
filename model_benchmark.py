@@ -19,17 +19,17 @@ args = parse_args()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 pretrained = {
-    'wrn284': (
-        'hydra_pretrained/adversarial_training/wrn284_cifar/model_best_dense.pth.tar',
-        'hydra_pruned/adversarial_training/wrn284_cifar/90/model_best_dense.pth.tar',
-        'hydra_pruned/adversarial_training/wrn284_cifar/95/model_best_dense.pth.tar',
-        'hydra_pruned/adversarial_training/wrn284_cifar/99/model_best_dense.pth.tar'
-    ),
     'vgg16': (
         'hydra_pretrained/adversarial_training/vgg16_cifar/model_best_dense.pth.tar',
         'hydra_pruned/adversarial_training/vgg16_cifar/90/model_best_dense.pth.tar',
         'hydra_pruned/adversarial_training/vgg16_cifar/95/model_best_dense.pth.tar',
         'hydra_pruned/adversarial_training/vgg16_cifar/99/model_best_dense.pth.tar'
+    ),
+    'wrn284': (
+        'hydra_pretrained/adversarial_training/wrn284_cifar/model_best_dense.pth.tar',
+        'hydra_pruned/adversarial_training/wrn284_cifar/90/model_best_dense.pth.tar',
+        'hydra_pruned/adversarial_training/wrn284_cifar/95/model_best_dense.pth.tar',
+        'hydra_pruned/adversarial_training/wrn284_cifar/99/model_best_dense.pth.tar'
     )
 }
 
@@ -75,7 +75,7 @@ def main():
 
     test_images = 1000
     attack_samples = 100
-    attack_batch_size = 25
+    attack_batch_size = 50
 
     # Load data
     print("->Retrieving the dataset...")
@@ -104,7 +104,7 @@ def main():
 
             checkpoint = torch.load(chk_path, map_location=device)
             model.load_state_dict(checkpoint['state_dict'], strict=True)
-            model.eval()
+            model.eval().to(device)
 
             # Clean-acc evaluation
             print(f"->Evaluating clean accuracy on {test_images} test images...")
@@ -149,7 +149,7 @@ def main():
 
                 fmn_opt = FMNOpt(
                     model=model.eval().to(device),
-                    dataset=dataset,
+                    dataset=testset,
                     norm='inf',
                     steps=steps,
                     batch_size=attack_batch_size,
@@ -161,8 +161,8 @@ def main():
                     device=device
                 )
 
-                fmn_opt.run()
-                robust_acc = accuracy(model, fmn_opt.attack_data['best_adv'], aa_labels)
+                fmn_opt.run(log=True)
+                robust_acc = accuracy(model, fmn_opt.attack_data[-1]['best_adv'], aa_labels)
                 print(f"->FMN robust accuracy: {robust_acc * 100:.2f}")
                 test_data[model_name][sparsities[i]]['AA robust'] = robust_acc
 
