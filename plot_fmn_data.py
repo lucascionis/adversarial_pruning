@@ -37,8 +37,11 @@ for idx, model in enumerate(models):
     ax.set_title(model)
     ax.grid(True)
 
+    # Draw 8/255 line
+    ax.axvline(x=8/255, color='g', label='8/255 point', linewidth=0.9)
+
 figure.text(0.5, 0.04, r'Perturbation $\delta$', ha='center')
 figure.text(0.08, 0.5, 'Robust Accuracy', va='center', rotation='vertical')
 
 
-plt.savefig(f"hydra_fmn_attack_exps.pdf", bbox_inches='tight')
+plt.savefig(f"hydra_fmn_attack_exps_1000steps.pdf", bbox_inches='tight')
