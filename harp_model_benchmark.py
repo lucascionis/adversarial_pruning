@@ -8,34 +8,43 @@ from torch.utils.data import DataLoader
 import pandas as pd
 import numpy as np
 
-from models.wrn_cifar import wrn_28_4 as hydra_wrn_28_4
-from models.vgg_cifar import vgg16_bn as hydra_vgg16
+from models.resnet_cifar import resnet18 as harp_resnet18
+from models.resnet_cifar import resnet18
+from models.resnet import ResNet50 as resnet50
+from models.vgg_cifar import vgg16_bn as vgg16
 from data.cifar import CIFAR10
+from data.svhn import SVHN
+from data.imagenet import imagenet
 
-from autoattack import AutoAttack as AA
 from attacks.fmn_opt import FMNOpt
 
 args = parse_args()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 pretrained = {
-    'vgg16': (
-        'hydra_pretrained/adversarial_training/vgg16_cifar/model_best_dense.pth.tar',
-        'hydra_pruned/adversarial_training/vgg16_cifar/90/model_best_dense.pth.tar',
-        'hydra_pruned/adversarial_training/vgg16_cifar/95/model_best_dense.pth.tar',
-        'hydra_pruned/adversarial_training/vgg16_cifar/99/model_best_dense.pth.tar'
+    'resnet18': (
+        'harp_pretrained/resnet18/CIFAR10/pgd/pretrain/latest_exp/checkpoint/model_best.pth.tar',
     ),
-    'wrn284': (
-        'hydra_pretrained/adversarial_training/wrn284_cifar/model_best_dense.pth.tar',
-        'hydra_pruned/adversarial_training/wrn284_cifar/90/model_best_dense.pth.tar',
-        'hydra_pruned/adversarial_training/wrn284_cifar/95/model_best_dense.pth.tar',
-        'hydra_pruned/adversarial_training/wrn284_cifar/99/model_best_dense.pth.tar'
+    'resnet18_svhn': (
+        'harp_pretrained/resnet18/SVHN/pgd/pretrain/latest_exp/checkpoint/model_best.pth.tar',
+    ),
+    'vgg16': (
+        'harp_pretrained/vgg16_bn/CIFAR10/pgd/pretrain/latest_exp/checkpoint/model_best.pth.tar',
+    ),
+    'vgg16_svhn': (
+        'harp_pretrained/vgg16_bn/SVHN/pgd/pretrain/latest_exp/checkpoint/model_best.pth.tar',
+    ),
+    'resnet50': (
+        'harp_pretrained/ResNet50/imagenet/normalize/pgd/pretrain/latest_exp/checkpoint/model_best.pth.tar',
     )
 }
 
 model_to_net = {
-    'wrn284': hydra_wrn_28_4,
-    'vgg16': hydra_vgg16
+    'resnet18': resnet18,
+    'resnet18_svhn': resnet18,
+    'resnet50': resnet50,
+    'vgg16': vgg16,
+    'vgg16_svhn': vgg16
 }
 
 sparsities = (0, 90, 95, 99)
@@ -70,17 +79,23 @@ def accuracy(model, samples, labels):
 
 def main():
     args.batch_size = args.test_batch_size = 10
-    args.test_autoattack = False
     args.test_fmn = True
 
-    test_images = 1000
-    attack_samples = 100
-    attack_batch_size = 50
+    test_images = 200
+    attack_samples = 10
+    attack_batch_size = 5
 
     # Load data
     print("->Retrieving the dataset...")
-    dataset = CIFAR10(args=args)
-    train_loader, test_loader, testset = dataset.data_loaders()
+    cifar10 = CIFAR10(args=args)
+    svhn = SVHN(args=args)
+
+    train_loader, test_loader, testset = cifar10.data_loaders()
+    svhn_train_loader, svhn_test_loader, svhn_testset = svhn.data_loaders()
+
+    if 'resnet50' in pretrained.keys():
+        imagenet_ds = imagenet(args=args)
+        imgnet_train_loader, imgnet_test_loader, imgnet_testset = imagenet_ds.data_loaders()
 
     # Creating data lists
     test_data = {}
@@ -92,6 +107,8 @@ def main():
             linear_layer=Linear,
             init_type='kaiming_normal',
             num_classes=10
+            #mean=torch.Tensor([0.4914, 0.4822, 0.4465]),
+            #std=torch.Tensor([0.2023, 0.1994, 0.2010])
         )
 
         if model_name not in test_data:
@@ -103,27 +120,28 @@ def main():
             test_data[model_name][sparsities[i]] = {}
 
             checkpoint = torch.load(chk_path, map_location=device)
-            model.load_state_dict(checkpoint['state_dict'], strict=True)
+            model.load_state_dict(checkpoint['state_dict'], strict=False)
             model.eval().to(device)
+
+            if model_name == 'resnet50':
+                try:
+                    train_loader, test_loader, testset = imgnet_train_loader, imgnet_test_loader, imgnet_testset
+                except Exception as e:
+                    print("Error loading imagenet dataset")
+                    print(e)
+
+            if '_svhn' in model_name:
+                try:
+                    train_loader, test_loader, testset = svhn_train_loader, svhn_test_loader, svhn_testset
+                except Exception as e:
+                    print("Error loading svhn dataset")
+                    print(e)
 
             # Clean-acc evaluation
             print(f"->Evaluating clean accuracy on {test_images} test images...")
             acc = compute_accuracy(model, test_loader, test_images)
             test_data[model_name][sparsities[i]]['clean acc'] = acc
 
-            # Auto-Attack evaluation
-            if args.test_autoattack:
-                print("->Evaluating robustness with AA...")
-                model_adv = AA(model, norm='Linf', eps=8 / 255, version='standard', device=device)
-                model_adv.attacks_to_run = model_adv.attacks_to_run = ['apgd-ce']
-
-                aa_dataloader = DataLoader(testset, batch_size=attack_samples, shuffle=False)
-                aa_images, aa_labels = next(iter(aa_dataloader))
-                x_adv = model_adv.run_standard_evaluation(aa_images, aa_labels, bs=attack_batch_size)
-
-                robust_acc = accuracy(model, x_adv, aa_labels)
-                print(f"->AA robust accuracy: {robust_acc*100:.2f}")
-                test_data[model_name][sparsities[i]]['AA robust'] = robust_acc
             if args.test_fmn:
                 print("->Evaluating robustness with FMN...")
                 steps = 100
@@ -169,7 +187,7 @@ def main():
                 # Get the current date and time
                 current_datetime = datetime.datetime.now()
                 formatted_datetime = current_datetime.strftime("%Y%m%d_%H%M")
-                data_path = os.path.join('fmn_attack_data', f'{model_name}_{sparsities[i]}_{formatted_datetime}')
+                data_path = os.path.join('harp_fmn_attack_data', f'{model_name}_{sparsities[i]}_{formatted_datetime}')
 
                 print('-> Saving FMN data...')
                 if not os.path.exists(data_path):
