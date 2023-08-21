@@ -39,10 +39,10 @@ class imagenet:
 
     def data_loaders(self, **kwargs):
         trainset = datasets.ImageFolder(
-            os.path.join(self.args.data_dir, "train"), self.tr_train
+            os.path.join(self.args.data_dir, 'imagenet', "train"), self.tr_train
         )
         testset = datasets.ImageFolder(
-            os.path.join(self.args.data_dir, "val"), self.tr_test
+            os.path.join(self.args.data_dir, 'imagenet', "val"), self.tr_test
         )
 
         train_loader = DataLoader(
@@ -66,4 +66,4 @@ class imagenet:
         print(
             f"Traing loader: {len(train_loader.dataset)} images, Test loader: {len(test_loader.dataset)} images"
         )
-        return train_loader, test_loader
+        return train_loader, test_loader, testset
