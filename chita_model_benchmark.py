@@ -29,7 +29,7 @@ pretrained = {
 }
 
 model_to_net = {
-    'mobilenetv1': mobilenet(),
+    'mobilenetv1': mobilenet,
     'resnet50': torch_resnet50,
 }
 
@@ -69,6 +69,7 @@ def main():
     # Load data
     print("->Retrieving the dataset...")
     train_dataset, test_dataset = imagenet_get_datasets("./datasets/imagenet")
+    '''
     train_loader = DataLoader(
         train_dataset,
         shuffle=True,
@@ -76,6 +77,7 @@ def main():
         num_workers=8,
         pin_memory=True
     )
+    '''
 
     test_loader = DataLoader(
         test_dataset,
@@ -90,16 +92,7 @@ def main():
 
     for model_name in pretrained:
         print("\n")
-        '''
-        model = model_to_net[model_name](
-            conv_layer=Conv2d,
-            linear_layer=Linear,
-            init_type='kaiming_normal',
-            num_classes=10
-            #mean=torch.Tensor([0.4914, 0.4822, 0.4465]),
-            #std=torch.Tensor([0.2023, 0.1994, 0.2010])
-        )
-        '''
+
         model = model_to_net[model_name]
         if model_name == 'resnet50':
             model = model(weights=None)
@@ -112,11 +105,11 @@ def main():
         # iterate through chechkpoints
         for i, chk_path in enumerate(pretrained[model_name]):
             sparsity = int(chk_path.split('/')[-2])
-            print(f"\n->Loading the {model_name}/{sparsities[i]} model...")
-            test_data[model_name][sparsities[i]] = {}
+            print(f"\n->Loading the {model_name}/{sparsity} model...")
+            test_data[model_name][sparsity] = {}
 
             #checkpoint = torch.load(chk_path, map_location=device)
-            state_trained = torch.load(chk_path, map_location=torch.device('cpu'))['state_dict']
+            state_trained = torch.load(chk_path, map_location=torch.device('cpu'))['model_state_dict']
             new_state_trained = model.state_dict()
             for k in state_trained:
                 key = k[7:]
@@ -130,7 +123,7 @@ def main():
             # Clean-acc evaluation
             print(f"->Evaluating clean accuracy on {test_images} test images...")
             acc = compute_accuracy(model, test_loader, test_images)
-            test_data[model_name][sparsities[i]]['clean acc'] = acc
+            test_data[model_name][sparsity]['clean acc'] = acc
 
             print("->Evaluating robustness with FMN...")
             steps = 100
@@ -156,7 +149,7 @@ def main():
 
             fmn_opt = FMNOpt(
                 model=model.eval().to(device),
-                dataset=testset,
+                dataset=test_dataset,
                 norm='inf',
                 steps=steps,
                 batch_size=attack_batch_size,
@@ -171,12 +164,12 @@ def main():
             fmn_opt.run()
             robust_acc = accuracy(model, fmn_opt.attack_data[-1]['best_adv'], fmn_opt.attack_data[-1]['labels'])
             print(f"->FMN robust accuracy: {robust_acc * 100:.2f}")
-            test_data[model_name][sparsities[i]]['AA robust'] = robust_acc
+            test_data[model_name][sparsity]['AA robust'] = robust_acc
 
             # Get the current date and time
             current_datetime = datetime.datetime.now()
             formatted_datetime = current_datetime.strftime("%Y%m%d_%H%M")
-            data_path = os.path.join('harp_fmn_attack_data', f'{model_name}_{sparsities[i]}_{formatted_datetime}')
+            data_path = os.path.join('chita_fmn_attack_data', f'{model_name}_{sparsity}_{formatted_datetime}')
 
             print('-> Saving FMN data...')
             if not os.path.exists(data_path):
