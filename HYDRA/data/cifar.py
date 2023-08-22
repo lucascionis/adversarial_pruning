@@ -35,7 +35,7 @@ class CIFAR10:
 
     def data_loaders(self, **kwargs):
         trainset = datasets.CIFAR10(
-            root=os.path.join(self.args.data_dir, "CIFAR10"),
+            root=os.path.join(self.args.data_dir, "../../datasets/CIFAR10"),
             train=True,
             download=True,
             transform=self.tr_train,
@@ -52,7 +52,7 @@ class CIFAR10:
             **kwargs,
         )
         testset = datasets.CIFAR10(
-            root=os.path.join(self.args.data_dir, "CIFAR10"),
+            root=os.path.join(self.args.data_dir, "../../datasets/CIFAR10"),
             train=False,
             download=True,
             transform=self.tr_test,
@@ -96,7 +96,7 @@ class CIFAR100:
 
     def data_loaders(self, **kwargs):
         trainset = datasets.CIFAR100(
-            root=os.path.join(self.args.data_dir, "CIFAR10"),
+            root=os.path.join(self.args.data_dir, "../../datasets/CIFAR10"),
             train=True,
             download=True,
             transform=self.tr_train,
@@ -113,7 +113,7 @@ class CIFAR100:
             **kwargs,
         )
         testset = datasets.CIFAR10(
-            root=os.path.join(self.args.data_dir, "CIFAR10"),
+            root=os.path.join(self.args.data_dir, "../../datasets/CIFAR10"),
             train=False,
             download=True,
             transform=self.tr_test,

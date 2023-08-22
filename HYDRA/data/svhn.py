@@ -35,7 +35,7 @@ class SVHN:
 
     def data_loaders(self, **kwargs):
         trainset = datasets.SVHN(
-            root=os.path.join(self.args.data_dir, "SVHN"),
+            root=os.path.join(self.args.data_dir, "../../datasets/SVHN"),
             split="train",
             download=True,
             transform=self.tr_train,
@@ -52,7 +52,7 @@ class SVHN:
             **kwargs,
         )
         testset = datasets.SVHN(
-            root=os.path.join(self.args.data_dir, "SVHN"),
+            root=os.path.join(self.args.data_dir, "../../datasets/SVHN"),
             split="test",
             download=True,
             transform=self.tr_test,

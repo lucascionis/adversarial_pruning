@@ -6,7 +6,7 @@ import os
 import math
 import numpy as np
 
-from models.layers import SubnetConv, SubnetLinear
+from HYDRA.models import SubnetConv, SubnetLinear
 
 # TODO: avoid freezing bn_params
 # Some utils are borrowed from https://github.com/allenai/hidden-networks
