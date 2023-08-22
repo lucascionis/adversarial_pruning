@@ -4,17 +4,15 @@ from args import parse_args
 
 import torch
 from torch.nn import Conv2d, Linear
-from torch.utils.data import DataLoader
 import pandas as pd
 import numpy as np
 
-from models.resnet_cifar import resnet18 as harp_resnet18
-from models.resnet_cifar import resnet18
-from models.resnet import ResNet50 as resnet50
-from models.vgg_cifar import vgg16_bn as vgg16
-from data.cifar import CIFAR10
-from data.svhn import SVHN
-from data.imagenet import imagenet
+from HYDRA.models import resnet18
+from HYDRA.models import ResNet50 as resnet50
+from HYDRA.models import vgg16_bn as vgg16
+from HYDRA.data.cifar import CIFAR10
+from HYDRA.data.svhn import SVHN
+from HYDRA.data.imagenet import imagenet
 
 from attacks.fmn_opt import FMNOpt
 
