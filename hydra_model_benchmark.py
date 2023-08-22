@@ -213,7 +213,7 @@ def main():
             flat_data.setdefault(inner_key, {})[outer_key] = value
 
     test_data_df = pd.DataFrame(flat_data)
-    test_data_df.to_csv('./test_pretrained.csv')
+    test_data_df.to_csv('./hydra_test_models.csv')
 
 
 if __name__ == '__main__':

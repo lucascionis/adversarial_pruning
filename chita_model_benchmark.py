@@ -176,10 +176,10 @@ def main():
                 os.makedirs(data_path)
             # Save the data
             for j in range(fmn_opt.batch_number):
-                    if not os.path.exists(f'{data_path}/{j}'):
-                        os.mkdir(f'{data_path}/{j}')
-                    for data in fmn_opt.attack_data[j]:
-                        torch.save(fmn_opt.attack_data[j][data], f'{data_path}/{j}/{data}.pt')
+                if not os.path.exists(f'{data_path}/{j}'):
+                    os.mkdir(f'{data_path}/{j}')
+                for data in fmn_opt.attack_data[j]:
+                    torch.save(fmn_opt.attack_data[j][data], f'{data_path}/{j}/{data}.pt')
 
     flat_data = {}
     for outer_key, inner_dict in test_data.items():
@@ -187,7 +187,7 @@ def main():
             flat_data.setdefault(inner_key, {})[outer_key] = value
 
     test_data_df = pd.DataFrame(flat_data)
-    test_data_df.to_csv('./test_pretrained.csv')
+    test_data_df.to_csv('./chita_test_models.csv')
 
 
 if __name__ == '__main__':
