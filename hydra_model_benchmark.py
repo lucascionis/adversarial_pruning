@@ -8,9 +8,11 @@ from torch.utils.data import DataLoader
 import pandas as pd
 import numpy as np
 
-from models.wrn_cifar import wrn_28_4 as hydra_wrn_28_4
-from models.vgg_cifar import vgg16_bn as hydra_vgg16
-from data.cifar import CIFAR10
+from HYDRA.models import wrn_28_4 as hydra_wrn_28_4
+from HYDRA.models import vgg16_bn as hydra_vgg16
+
+from HYDRA.data.cifar import CIFAR10
+from HYDRA.data.svhn import SVHN
 
 from autoattack import AutoAttack as AA
 from attacks.fmn_opt import FMNOpt
@@ -25,17 +27,31 @@ pretrained = {
         'hydra_pruned/adversarial_training/vgg16_cifar/95/model_best_dense.pth.tar',
         'hydra_pruned/adversarial_training/vgg16_cifar/99/model_best_dense.pth.tar'
     ),
+    'vgg16_svhn': (
+        'hydra_pretrained/adversarial_training/vgg16_svhn/model_best_dense.pth.tar',
+        'hydra_pruned/adversarial_training/vgg16_svhn/90/model_best_dense.pth.tar',
+        'hydra_pruned/adversarial_training/vgg16_svhn/95/model_best_dense.pth.tar',
+        'hydra_pruned/adversarial_training/vgg16_svhn/99/model_best_dense.pth.tar'
+    ),
     'wrn284': (
         'hydra_pretrained/adversarial_training/wrn284_cifar/model_best_dense.pth.tar',
         'hydra_pruned/adversarial_training/wrn284_cifar/90/model_best_dense.pth.tar',
         'hydra_pruned/adversarial_training/wrn284_cifar/95/model_best_dense.pth.tar',
         'hydra_pruned/adversarial_training/wrn284_cifar/99/model_best_dense.pth.tar'
+    ),
+    'wrn284_svhn': (
+        'hydra_pretrained/adversarial_training/wrn284_svhn/model_best_dense.pth.tar',
+        'hydra_pruned/adversarial_training/wrn284_svhn/90/model_best_dense.pth.tar',
+        'hydra_pruned/adversarial_training/wrn284_svhn/95/model_best_dense.pth.tar',
+        'hydra_pruned/adversarial_training/wrn284_svhn/99/model_best_dense.pth.tar'
     )
 }
 
 model_to_net = {
     'wrn284': hydra_wrn_28_4,
-    'vgg16': hydra_vgg16
+    'vgg16': hydra_vgg16,
+    'vgg16_svhn': hydra_vgg16,
+    'wrn284_svhn': hydra_wrn_28_4
 }
 
 sparsities = (0, 90, 95, 99)
@@ -79,8 +95,11 @@ def main():
 
     # Load data
     print("->Retrieving the dataset...")
-    dataset = CIFAR10(args=args)
-    train_loader, test_loader, testset = dataset.data_loaders()
+    cifar10 = CIFAR10(args=args)
+    svhn = SVHN(args=args)
+
+    train_loader, test_loader, testset = cifar10.data_loaders()
+    svhn_train_loader, svhn_test_loader, svhn_testset = svhn.data_loaders()
 
     # Creating data lists
     test_data = {}
@@ -105,6 +124,13 @@ def main():
             checkpoint = torch.load(chk_path, map_location=device)
             model.load_state_dict(checkpoint['state_dict'], strict=True)
             model.eval().to(device)
+
+            if '_svhn' in model_name:
+                try:
+                    train_loader, test_loader, testset = svhn_train_loader, svhn_test_loader, svhn_testset
+                except Exception as e:
+                    print("Error loading svhn dataset")
+                    print(e)
 
             # Clean-acc evaluation
             print(f"->Evaluating clean accuracy on {test_images} test images...")
