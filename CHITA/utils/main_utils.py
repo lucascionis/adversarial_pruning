@@ -7,16 +7,15 @@ import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 
 from torchvision.models import resnet50 as torch_resnet50
-from models.resnet_cifar10 import resnet20
-from models.wideresnet_cifar import Wide_ResNet
-from models.mlpnet import MlpNet
-from models.mobilenet import mobilenet
+from CHITA.models.resnet_cifar10 import resnet20
+from CHITA.models.wideresnet_cifar import Wide_ResNet
+from CHITA.models.mlpnet import MlpNet
+from CHITA.models.mobilenet import mobilenet
 from collections import OrderedDict
 import json
 import torch.distributed as dist
 
-
-from CHITA_opt.L0_card_const import Heuristic_CD_PP,Active_IHTCDLS_PP,Heuristic_LS,Heuristic_LSBlock,evaluate_obj
+# from CHITA.CHITA_opt.L0_card_const import Heuristic_CD_PP,Active_IHTCDLS_PP,Heuristic_LS,Heuristic_LSBlock,evaluate_obj
 
 def sync_weights(model, rank, world_size):
     for param in model.parameters():
