@@ -11,7 +11,7 @@ models = tuple({'_'.join(f.name.split('_')[:2])
                 for f in data_dir.glob('*') if f.is_dir()})
 models = sorted(models)
 
-figure, axes = plt.subplots(2, 4, figsize=(12, 6), sharex=True, sharey=True)
+figure, axes = plt.subplots(2, 3, figsize=(12, 6), sharex=True, sharey=True)
 for idx, model in enumerate(models):
     model_dir = list(data_dir.glob(f'{model}*'))[0]
     batches = [f for f in model_dir.glob('*')]
@@ -56,4 +56,4 @@ figure.text(0.5, 0.04, r'Perturbation $||\delta||$', ha='center')
 figure.text(0.08, 0.5, 'Robust Accuracy', va='center', rotation='vertical')
 
 
-plt.savefig(f"harp_fmn_attack_exps_test_1.pdf", bbox_inches='tight')
+plt.savefig(f"harp_fmn_attack_exps_500samples_500steps.pdf", bbox_inches='tight')
