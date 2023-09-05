@@ -9,3 +9,5 @@
 /datasets/
 /fmn_attack_data/
 /chita_pretrained/
+/CHITA/
+/chita_model_benchmark.py
