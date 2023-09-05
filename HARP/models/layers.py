@@ -5,7 +5,7 @@ import torch.autograd as autograd
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.parameter import Parameter
-from utils.utils import rate_act_func
+from HARP.utils.utils import rate_act_func
 
 conv_nr = 0
 linear_nr = 0
