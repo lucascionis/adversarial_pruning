@@ -1,3 +1,4 @@
+"""
 # small-caps refers to cifar-style models i.e., resnet18 -> for cifar vs ResNet18 -> standard arch.
 from HYDRA.models import (
     vgg16,
@@ -57,3 +58,4 @@ __all__ = [
     "ResNet34",
     "ResNet50",
 ]
+"""
