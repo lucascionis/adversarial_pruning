@@ -7,12 +7,12 @@ from torch.nn import Conv2d, Linear
 import pandas as pd
 import numpy as np
 
-from HARP.models.vgg_cifar import vgg16_bn
-from HARP.models.layers import SubnetConv, SubnetLinear
+from .models.vgg_cifar import vgg16_bn
+from .models.layers import SubnetConv, SubnetLinear
 
-from HYDRA.data.cifar import CIFAR10
-from HYDRA.data.svhn import SVHN
-from HYDRA.data.imagenet import imagenet
+from .data.cifar import CIFAR10
+# from HYDRA.data.svhn import SVHN
+# from HYDRA.data.imagenet import imagenet
 
 from attacks.fmn_opt import FMNOpt
 
@@ -157,7 +157,7 @@ def main():
                 # Get the current date and time
                 current_datetime = datetime.datetime.now()
                 formatted_datetime = current_datetime.strftime("%Y%m%d_%H%M")
-                data_path = os.path.join('harp_fmn_attack_data', f'{model_name}_{sparsities[i]}_{formatted_datetime}')
+                data_path = os.path.join('../harp_fmn_attack_data', f'{model_name}_{sparsities[i]}_{formatted_datetime}')
 
                 print('-> Saving FMN data...')
                 if not os.path.exists(data_path):
