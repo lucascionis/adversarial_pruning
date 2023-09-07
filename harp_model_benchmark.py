@@ -21,10 +21,10 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 pretrained = {
     'vgg16': (
-        'harp_pretrained/vgg16_bn/CIFAR10/pgd/pretrain/latest_exp/checkpoint/model_best.pth.tar',
         'harp_pruned/vgg16_bn_90_model_best.pth.tar',
         'harp_pruned/vgg16_bn_95_model_best.pth.tar',
-        'harp_pruned/vgg16_bn_99_model_best.pth.tar'
+        'harp_pruned/vgg16_bn_99_model_best.pth.tar',
+        'harp_pretrained/vgg16_bn/CIFAR10/pgd/pretrain/latest_exp/checkpoint/model_best.pth.tar'
     )
 }
 
@@ -32,7 +32,7 @@ model_to_net = {
     'vgg16': vgg16_bn
 }
 
-sparsities = (0, 90, 95, 99)
+sparsities = (90, 95, 99, 0)
 
 
 def compute_accuracy(net, test_loader, test_images=1000):
@@ -92,7 +92,7 @@ def main():
         model = model_to_net[model_name](SubnetConv, SubnetLinear, init_type='kaiming_normal',
                                    mean=torch.Tensor([0.4914, 0.4822, 0.4465]),
                                    std=torch.Tensor([0.2471, 0.2435, 0.2616]), prune_reg='weight',
-                                   task_mode='pretrain', normalize=False)
+                                   task_mode='harp_finetune', normalize=False)
 
         if model_name not in test_data:
             test_data[model_name] = {}
