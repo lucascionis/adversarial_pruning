@@ -61,7 +61,7 @@ class CIFAR10:
         print(
             f"Traing loader: {len(train_loader.dataset)} images, Test loader: {len(test_loader.dataset)} images"
         )
-        return train_loader, test_loader
+        return train_loader, test_loader, testset
 
 
 

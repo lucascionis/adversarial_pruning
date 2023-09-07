@@ -7,10 +7,10 @@ from torch.nn import Conv2d, Linear
 import pandas as pd
 import numpy as np
 
-from .models.vgg_cifar import vgg16_bn
-from .models.layers import SubnetConv, SubnetLinear
+from HARP.models.vgg_cifar import vgg16_bn
+from HARP.models.layers import SubnetConv, SubnetLinear
 
-from .data.cifar import CIFAR10
+from HARP.data.cifar import CIFAR10
 # from HYDRA.data.svhn import SVHN
 # from HYDRA.data.imagenet import imagenet
 
@@ -92,7 +92,7 @@ def main():
         model = model_to_net[model_name](SubnetConv, SubnetLinear, init_type='kaiming_normal',
                                    mean=torch.Tensor([0.4914, 0.4822, 0.4465]),
                                    std=torch.Tensor([0.2471, 0.2435, 0.2616]), prune_reg='weight',
-                                   task_mode='harp_finetune', normalize=False)
+                                   task_mode='pretrain', normalize=False)
 
         if model_name not in test_data:
             test_data[model_name] = {}
@@ -157,7 +157,7 @@ def main():
                 # Get the current date and time
                 current_datetime = datetime.datetime.now()
                 formatted_datetime = current_datetime.strftime("%Y%m%d_%H%M")
-                data_path = os.path.join('../harp_fmn_attack_data', f'{model_name}_{sparsities[i]}_{formatted_datetime}')
+                data_path = os.path.join('harp_fmn_attack_data', f'{model_name}_{sparsities[i]}_{formatted_datetime}')
 
                 print('-> Saving FMN data...')
                 if not os.path.exists(data_path):

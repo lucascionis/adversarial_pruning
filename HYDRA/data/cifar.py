@@ -35,7 +35,7 @@ class CIFAR10:
 
     def data_loaders(self, **kwargs):
         trainset = datasets.CIFAR10(
-            root=os.path.join(self.args.data_dir, "../../datasets/CIFAR10"),
+            root=os.path.join(self.args.data_dir, "CIFAR10"),
             train=True,
             download=True,
             transform=self.tr_train,
