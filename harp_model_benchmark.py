@@ -1,14 +1,15 @@
 import os
 import datetime
-from args import parse_args
+from HARP.args import parse_args
 
 import torch
 from torch.nn import Conv2d, Linear
 import pandas as pd
 import numpy as np
 
-from HARP.models.vgg_cifar import vgg16
+from HARP.models.vgg_cifar import vgg16_bn
 from HARP.models.layers import SubnetConv, SubnetLinear
+from HARP.utils.model import prepare_model
 
 from HARP.data.cifar import CIFAR10
 # from HYDRA.data.svhn import SVHN
@@ -21,18 +22,18 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 pretrained = {
     'vgg16': (
+        'harp_pretrained/vgg16_bn/CIFAR10/pgd/pretrain/latest_exp/checkpoint/model_best.pth.tar',
         'harp_pruned/vgg16_bn_90_model_best.pth.tar',
         'harp_pruned/vgg16_bn_95_model_best.pth.tar',
-        'harp_pruned/vgg16_bn_99_model_best.pth.tar',
-        'harp_pretrained/vgg16_bn/CIFAR10/pgd/pretrain/latest_exp/checkpoint/model_best.pth.tar'
+        'harp_pruned/vgg16_bn_99_model_best.pth.tar'
     )
 }
 
 model_to_net = {
-    'vgg16': vgg16
+    'vgg16': vgg16_bn
 }
 
-sparsities = (90, 95, 99, 0)
+sparsities = (0, 90, 95, 99)
 
 
 def compute_accuracy(net, test_loader, test_images=1000):
@@ -63,6 +64,9 @@ def accuracy(model, samples, labels):
 
 
 def main():
+    args.exp_mode = 'harp_finetune'
+    args.init_type = args.scores_init_type = 'kaiming_normal'
+
     args.batch_size = args.test_batch_size = 10
     args.test_fmn = True
 
@@ -78,21 +82,18 @@ def main():
     train_loader, test_loader, testset = cifar10.data_loaders()
     # svhn_train_loader, svhn_test_loader, svhn_testset = svhn.data_loaders()
 
-    '''
-    if 'resnet50' in pretrained.keys():
-        imagenet_ds = imagenet(args=args)
-        imgnet_train_loader, imgnet_test_loader, imgnet_testset = imagenet_ds.data_loaders()
-    '''
 
     # Creating data lists
     test_data = {}
 
     for model_name in pretrained:
         print("\n")
-        model = model_to_net[model_name](SubnetConv, SubnetLinearLinear, init_type='kaiming_normal',
+        model = model_to_net[model_name](SubnetConv, SubnetLinear, init_type='kaiming_normal',
                                    mean=torch.Tensor([0.4914, 0.4822, 0.4465]),
                                    std=torch.Tensor([0.2471, 0.2435, 0.2616]), prune_reg='weight',
                                    task_mode='harp_finetune', normalize=False)
+
+        prepare_model(model, args, device)
 
         if model_name not in test_data:
             test_data[model_name] = {}
