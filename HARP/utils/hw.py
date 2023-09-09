@@ -1,7 +1,7 @@
 import numpy as np
 import torch
-from HYDRA.models import SubnetConv, SubnetLinear
-from utils.utils import rate_act_func
+from HARP.models.layers import SubnetConv, SubnetLinear
+from HARP.utils.utils import rate_act_func
 
 
 def count_flops_dense(in_features, out_features, bias=True, activation=True):

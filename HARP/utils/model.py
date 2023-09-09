@@ -4,9 +4,9 @@ import torch.nn as nn
 import os
 import math
 import numpy as np
-from utils.hw import vgg16_bn_flops, resnet18_flops
-from HYDRA.models import SubnetConv, SubnetLinear
-from utils.utils import rate_act_func, rate_init_func
+from HARP.utils.hw import vgg16_bn_flops, resnet18_flops
+from HARP.models.layers import SubnetConv, SubnetLinear
+from HARP.utils.utils import rate_act_func, rate_init_func
 
 # TODO: avoid freezing bn_params
 # Some utils are borrowed from https://github.com/allenai/hidden-networks and https://github.com/inspire-group/hydra
