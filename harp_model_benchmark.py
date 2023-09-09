@@ -70,9 +70,9 @@ def main():
     args.batch_size = args.test_batch_size = 10
     args.test_fmn = True
 
-    test_images = 200
-    attack_samples = 10
-    attack_batch_size = 5
+    test_images = 1000
+    attack_samples = 1000
+    attack_batch_size = 100
 
     # Load data
     print("->Retrieving the dataset...")
@@ -82,31 +82,35 @@ def main():
     train_loader, test_loader, testset = cifar10.data_loaders()
     # svhn_train_loader, svhn_test_loader, svhn_testset = svhn.data_loaders()
 
-
     # Creating data lists
     test_data = {}
 
     for model_name in pretrained:
         print("\n")
-        model = model_to_net[model_name](SubnetConv, SubnetLinear, init_type='kaiming_normal',
-                                   mean=torch.Tensor([0.4914, 0.4822, 0.4465]),
-                                   std=torch.Tensor([0.2471, 0.2435, 0.2616]), prune_reg='weight',
-                                   task_mode='harp_finetune', normalize=False)
-
-        prepare_model(model, args, device)
 
         if model_name not in test_data:
             test_data[model_name] = {}
 
         # iterate through chechkpoints
         for i, chk_path in enumerate(pretrained[model_name]):
+            if sparsities[i] == 0:
+                args.exp_mode = 'pretrain'
+            else:
+                args.exp_mode = 'harp_finetune'
+
+            model = model_to_net[model_name](SubnetConv, SubnetLinear, init_type=args.init_type,
+                                             mean=torch.Tensor([0.4914, 0.4822, 0.4465]),
+                                             std=torch.Tensor([0.2471, 0.2435, 0.2616]), prune_reg='weight',
+                                             task_mode=args.exp_mode, normalize=False)
+
+            prepare_model(model, args, device)
+
             print(f"\n->Loading the {model_name}/{sparsities[i]} model...")
             test_data[model_name][sparsities[i]] = {}
 
             checkpoint = torch.load(chk_path, map_location=device)
             model.load_state_dict(checkpoint['state_dict'], strict=True)
             model.eval().to(device)
-
 
             # Clean-acc evaluation
             print(f"->Evaluating clean accuracy on {test_images} test images...")
@@ -115,7 +119,7 @@ def main():
 
             if args.test_fmn:
                 print("->Evaluating robustness with FMN...")
-                steps = 100
+                steps = 500
 
                 optimizer = 'SGD'
                 scheduler = 'CosineAnnealingLR'
@@ -142,7 +146,7 @@ def main():
                     norm='inf',
                     steps=steps,
                     batch_size=attack_batch_size,
-                    batch_number=attack_samples//attack_batch_size,
+                    batch_number=attack_samples // attack_batch_size,
                     optimizer=optimizer,
                     scheduler=scheduler,
                     optimizer_config=optimizer_config,
