@@ -89,7 +89,7 @@ def main():
 
     for model_name in pretrained:
         print("\n")
-        model = model_to_net[model_name](Conv2d, Linear, init_type='kaiming_normal',
+        model = model_to_net[model_name](SubnetConv, SubnetLinearLinear, init_type='kaiming_normal',
                                    mean=torch.Tensor([0.4914, 0.4822, 0.4465]),
                                    std=torch.Tensor([0.2471, 0.2435, 0.2616]), prune_reg='weight',
                                    task_mode='harp_finetune', normalize=False)
