@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 import torch.optim as optim
 import torchattacks
-from HYDRA.models import SubnetConv, SubnetLinear
+from HARP.models import SubnetConv, SubnetLinear
 from utils.flops import count_flops_conv, count_flops_dense
 
 
