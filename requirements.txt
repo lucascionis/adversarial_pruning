@@ -9,5 +9,6 @@ numpy
 pandas
 flaml
 foolbox
+scikit-learn
 git+https://github.com/RobustBench/robustbench.git
 git+https://github.com/fra31/auto-attack
