@@ -264,8 +264,7 @@ class FMNOpt:
                     c_loss = nn.CrossEntropyLoss()
                     loss = -c_loss(logits, labels)
 
-                loss = loss.sum()
-                loss.backward(retain_graph=True)
+                loss.sum().backward()
                 delta_grad = delta.grad.data
 
                 is_adv = (pred_labels == labels) if self.targeted else (pred_labels != labels)
